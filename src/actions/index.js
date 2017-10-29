@@ -15,17 +15,16 @@ import {
   ALL_JOBSEEKERS_BY_CAMPAIGN,
   UPDATE_JOBSEEKERSTATUS_TO_SELECTED,
   LOCALLY_UPDATE_JOBSEEKERSTATUS_TO_SELECTED,
-
   NEST_JOBSEEKERS_INTO_CAMPAIGNS,
   CLEAR_NESTED_CAMPAIGNS_WITH_JOBSEEKERS_STATE,
   CLEAR_ALL_CAMPAIGNS,
-
-
   CLEAR_ALL_JOBSEEKERS_STATE,
   WORKFORCE,
   COUNTER_OF_JOBSEEKERS_BY_CAMPAIGN_ID_TO_FIX_GLITCH,
   RESET_TO_ZERO_COUNTER_OF_JOBSEEKERS_BY_CAMPAIGN_ID_TO_FIX_GLITCH,
-  FLATTEN_ALL_JOBSEEKERS_BY_CAMPAIGN_INTO_ONE_ARRAY
+  FLATTEN_ALL_JOBSEEKERS_BY_CAMPAIGN_INTO_ONE_ARRAY,
+
+  FETCH_ADDITIONAL_QUESTIONS
 } from './types.js';
 
 
@@ -50,6 +49,29 @@ const ROOT_URL = 'http://localhost:3000';
 
 
 
+export function addNewQuestion(newQuestion){
+  return function(dispatch){
+    axios.post(`${ROOT_URL}/campaigns/add-question`, {q_txt: newQuestion, q_score: 10})
+      .then(response => {
+        dispatch(fetchAdditionalQuestions());
+      })
+      .catch((err)=>{
+        console.log(err)
+      })
+  }
+}
+
+export function fetchAdditionalQuestions(){
+  return function(dispatch){
+    axios.get(`${ROOT_URL}/campaigns/questions`)
+      .then(response => {
+        dispatch({ type: FETCH_ADDITIONAL_QUESTIONS, payload: response.data });
+      })
+      .catch((err)=>{
+        console.log(err)
+      })
+  }
+}
 
 export function clearAllCampaigns(){
   return{
@@ -63,22 +85,6 @@ export function clearNestedCampaignsWithJobseekersState(){
   }
 }
 
-
-/*export function archiveCampaign({campaign_id}){
-  return function(dispatch){
-    axios.put(`${ROOT_URL}/campaigns/archived?campaign_id=${campaign_id}`, {campaign_status: 'archived'})
-      .then(response => {
-        dispatch(clearAllJobseekersState())
-        dispatch(resetToZeroCounterOfJobseekersByCampaignIdToFixGlitch())
-        dispatch(clearAllCampaigns())
-        dispatch(clearNestedCampaignsWithJobseekersState())
-      })
-      .catch((err)=>{
-        console.log(err)
-      })
-  }
-}*/
-
 export function archiveCampaign({campaign_id}){
   return function(dispatch){
     axios.put(`${ROOT_URL}/campaigns/archived?campaign_id=${campaign_id}`, {campaign_status: 'archived'})
@@ -90,13 +96,6 @@ export function archiveCampaign({campaign_id}){
       })
   }
 }
-
-
-
-
-
-
-
 
 export function updateJobseekerJobStatus({job_status, jobseeker_id, campaign_id}){
   return function(dispatch){
@@ -110,13 +109,6 @@ export function updateJobseekerJobStatus({job_status, jobseeker_id, campaign_id}
       })
   }
 }
-
-
-
-
-
-
-
 
 export function moveWorkerToArchived({job_status, jobseeker_id, campaign_id}){
   return function(dispatch){

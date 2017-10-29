@@ -4,11 +4,16 @@ import FormSecondPage from "./forms/form_2"
 import FormThirdPage from "./forms/form_3"
 import FormFourthPage from "./forms/form_4"
 import FormFifthPage from "./forms/form_5"
+import FormSixthPage from "./forms/form_6"
 import RaisedButton from 'material-ui/RaisedButton'
 import { Grid, Row, Col } from 'react-flexbox-grid'
 import styles from './forms/form_material_styles'
 import TopCounter from "./topCounter"
 import Animation from 'react-addons-css-transition-group'
+
+import * as actions from '../../actions'
+import { Field, reduxForm, formValueSelector, change } from 'redux-form'
+import { connect } from 'react-redux'
 
 
 class CreateCampaignParent extends Component {
@@ -21,6 +26,11 @@ class CreateCampaignParent extends Component {
       page: 1
     }
   }
+
+  componentWillMount(){
+    this.props.dispatch(change('admin','questions_selected', []))
+  }
+
   nextPage() {
     this.setState({ 
       page: this.state.page + 1,
@@ -53,7 +63,7 @@ class CreateCampaignParent extends Component {
               transitionLeaveTimeout={500}
               transitionAppear={true}
               transitionAppearTimeout={500}>            
-              {page === 1 && 
+              {page === 11 && 
                 <FormFirstPage 
                   onSubmit={this.nextPage} 
                 />}
@@ -71,9 +81,14 @@ class CreateCampaignParent extends Component {
                 <FormFourthPage 
                   previousPage={this.previousPage}
                   onSubmit={this.nextPage} 
-                />}              
-              {page === 5 && 
+                />}  
+              {page === 1 && 
                 <FormFifthPage 
+                  previousPage={this.previousPage}
+                  onSubmit={this.nextPage} 
+                />}            
+              {page === 6 && 
+                <FormSixthPage 
                   previousPage={this.previousPage}
                   onSubmit={onSubmit} 
                 />}
@@ -89,6 +104,13 @@ CreateCampaignParent.propTypes = {
   onSubmit: PropTypes.func.isRequired
 }
 
+CreateCampaignParent = reduxForm({
+  form: 'admin',
+  destroyOnUnmount: false,
+  forceUnregisterOnUnmount: true,
+})(
+    connect(null, actions)(CreateCampaignParent)
+);
 
 
 export default CreateCampaignParent

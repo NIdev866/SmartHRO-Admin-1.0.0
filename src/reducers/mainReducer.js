@@ -13,9 +13,10 @@ import { COMPANIES,
   CREATE_CAMPAIGN_SUBMITTING_STARTED,
   CREATE_CAMPAIGN_SUBMITTING_SUCCESSFUL,
   CREATE_CAMPAIGN_SUBMITTING_FAILED,
-
   CLEAR_NESTED_CAMPAIGNS_WITH_JOBSEEKERS_STATE,
-  CLEAR_ALL_CAMPAIGNS
+  CLEAR_ALL_CAMPAIGNS,
+
+  FETCH_ADDITIONAL_QUESTIONS
   } from '../actions/types.js';
 
 export default function(state = {}, action){
@@ -52,16 +53,11 @@ export default function(state = {}, action){
 
           return { ...state, campaignsWithNestedJobseekers: nestedCampaigns }
 
-
-
         case CLEAR_NESTED_CAMPAIGNS_WITH_JOBSEEKERS_STATE:
           return { ...state, campaignsWithNestedJobseekers: null }
 
         case CLEAR_ALL_CAMPAIGNS:
           return { ...state, allCampaigns: null }
-
-
-
 
         case CLEAR_ALL_JOBSEEKERS_STATE:
           return { ...state, jobseekersByCampaign: null }
@@ -111,6 +107,8 @@ export default function(state = {}, action){
         case CREATE_CAMPAIGN_SUBMITTING_FAILED:
           return {...state, createCampaignSubmittingStarted: false, createCampaignSubmittingSuccessful: false, createCampaignSubmittingFailed: true}
 
+        case FETCH_ADDITIONAL_QUESTIONS:
+          return {...state, additionalQuestions: action.payload}
     }
 
     return state;

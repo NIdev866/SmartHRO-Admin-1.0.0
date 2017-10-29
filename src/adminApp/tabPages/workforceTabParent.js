@@ -23,7 +23,11 @@ class WorkforceTabParent extends Component {
     this.handlArchivingWorker = this.handlArchivingWorker.bind(this)
 
 
-    this.createDistance = this.createDistance.bind(this)
+    this.geocodeCompany = this.geocodeCompany.bind(this)
+    this.geocodeWorker = this.geocodeWorker.bind(this)
+
+
+
   }
   componentWillMount(){
     this.props.fetchWorkforce()
@@ -48,56 +52,72 @@ class WorkforceTabParent extends Component {
   }
 
 
-  //Was getting errors with OVER_QUERY_LIMIT with postcode geocoder. try to add increasing intervals for function calling
-  createDistance(workerPostalCode, workerAndCompanyIndex, companyPostalCode){
+  createDistance(workerAndCompanyIndex){
+    let resultDistance
+    let DistanceService = new google.maps.DistanceMatrixService();
+    DistanceService.getDistanceMatrix({
+        origins: [this.state[`geocodedPostcodeOfCompanyIndexed${workerAndCompanyIndex}`]],
+        destinations: [this.state[`geocodedPostcodeOfWorkerIndexed${workerAndCompanyIndex}`]],
+        travelMode: 'DRIVING',
+        avoidHighways: false,
+        avoidTolls: false,
+      }, (result, status) => { 
+        if(result && result.rows[0].elements[0].distance){
+          resultDistance = result.rows[0].elements[0].distance.text
+          if(!this.state[`distance${workerAndCompanyIndex}`]){
+            this.setState({    // prevState?
+              [`distance${workerAndCompanyIndex}`]: resultDistance
+            })
+          }
+        }
+      })
+  }
 
+
+  geocodeWorker(workerPostalCode, workerAndCompanyIndex){
     let geocoder = new google.maps.Geocoder();
     if(!this.state[`geocodedPostcodeOfWorkerIndexed${workerAndCompanyIndex}`]){
+      geocoder.geocode({'address': workerPostalCode }, (results, status)=> {
 
-        geocoder.geocode({'address': workerPostalCode }, (results, status)=> {
-
-          if (status === 'OK') {
-            this.setState({
-              [`geocodedPostcodeOfWorkerIndexed${workerAndCompanyIndex}`]: results[0].geometry.location
-            }, ()=>{
-
-              let geocoder = new google.maps.Geocoder();
-              if(!this.state[`geocodedPostcodeOfCompanyIndexed${workerAndCompanyIndex}`]){
-                geocoder.geocode({'address': companyPostalCode }, (results, status)=> {
-
-                  if (status === 'OK') {
-                    this.setState({
-                      [`geocodedPostcodeOfCompanyIndexed${workerAndCompanyIndex}`]: results[0].geometry.location
-                    }, ()=>{
-
-                      let resultDistance
-                      let DistanceService = new google.maps.DistanceMatrixService();
-                      DistanceService.getDistanceMatrix({
-                          origins: [this.state[`geocodedPostcodeOfWorkerIndexed${workerAndCompanyIndex}`]],
-                          destinations: [this.state[`geocodedPostcodeOfCompanyIndexed${workerAndCompanyIndex}`]],
-                          travelMode: 'DRIVING',
-                          avoidHighways: false,
-                          avoidTolls: false,
-                        }, (result, status) => { 
-                          if(result && result.rows[0].elements[0].distance){
-                            resultDistance = result.rows[0].elements[0].distance.text
-                            if(!this.state[`distance${workerAndCompanyIndex}`]){
-                              this.setState({    // prevState?
-                                [`distance${workerAndCompanyIndex}`]: resultDistance
-                              })
-                            }
-                          }
-                        })
-                      })
-                  }
-                })
-              }
-            })
+        if (status === 'OK') {
+          this.setState({
+            [`geocodedPostcodeOfWorkerIndexed${workerAndCompanyIndex}`]: results[0].geometry.location
+          })
+        }
+        else if(status == 'OVER_QUERY_LIMIT'){
+          setTimeout(()=>{
+            this.geocodeWorker(workerPostalCode, workerAndCompanyIndex)
+          }, 200)
+        }
+        else{
+          this.setState({[`distance${workerAndCompanyIndex}`]: 'noValidPostcode'})
         }
       })
     }
   }
-  //Was getting errors with OVER_QUERY_LIMIT with postcode geocoder. try to add increasing intervals for function calling
+
+
+  geocodeCompany(companyPostalCode, workerAndCompanyIndex){
+      let geocoder = new google.maps.Geocoder();
+      if(!this.state[`geocodedPostcodeOfCompanyIndexed${workerAndCompanyIndex}`]){
+        geocoder.geocode({'address': companyPostalCode }, (results, status)=> {
+          if (status === 'OK') {
+            this.setState({
+              [`geocodedPostcodeOfCompanyIndexed${workerAndCompanyIndex}`]: results[0].geometry.location
+            })
+          }
+          else if(status == 'OVER_QUERY_LIMIT'){
+            setTimeout(()=>{
+              this.geocodeCompany(companyPostalCode, workerAndCompanyIndex)
+            }, 200)
+          }
+          else{
+            this.setState({[`distance${workerAndCompanyIndex}`]: 'noValidPostcode'})
+          }
+        })
+      }
+  }
+
 
 
   render() {
@@ -133,30 +153,39 @@ class WorkforceTabParent extends Component {
           {this.props.workforce.map((worker, workerAndCompanyIndex)=>{
 
 
+
             if(worker.jobseeker_status[0].company_id && worker.postal_code){
-
-
-
 
 
 
               let IdOfCompanyToCalculateDistanceFrom = worker.jobseeker_status[0].company_id
 
-              
-
               let CompanyToCalculateDistanceFrom = this.props.companies.filter((company)=>{
                 return company.company_id == IdOfCompanyToCalculateDistanceFrom
               })
 
+              if(!this.state[`geocodedPostcodeOfWorkerIndexed${workerAndCompanyIndex}`] || 
+                 !this.state[`geocodedPostcodeOfCompanyIndexed${workerAndCompanyIndex}`]){
 
-              if(!this.state[`geocodedPostcodeOfWorkerIndexed${workerAndCompanyIndex}`])
+                this.geocodeCompany(CompanyToCalculateDistanceFrom[0].post_code, workerAndCompanyIndex)
 
+              }
 
-              this.createDistance(worker.postal_code, workerAndCompanyIndex, CompanyToCalculateDistanceFrom[0].post_code)
+                
+              if(this.state[`geocodedPostcodeOfCompanyIndexed${workerAndCompanyIndex}`]){
+                this.geocodeWorker(worker.postal_code, workerAndCompanyIndex)
+              }
 
+              if(this.state[`geocodedPostcodeOfWorkerIndexed${workerAndCompanyIndex}`] && 
+                 this.state[`geocodedPostcodeOfCompanyIndexed${workerAndCompanyIndex}`]){
 
+                this.createDistance(workerAndCompanyIndex)
 
+              }
 
+            }
+            else if(this.state[`distance${workerAndCompanyIndex}`] !== 'noValidPostcode'){
+              this.setState({[`distance${workerAndCompanyIndex}`]: 'noValidPostcode'})
             }
 
 
@@ -174,7 +203,7 @@ class WorkforceTabParent extends Component {
                   <p style={{fontFamily: globalFonts.Abel, fontSize: "13px", margin: "-10px", marginTop: "10px", padding: "0", color: "#DEDEDE"}}>{'Age range ' + worker.age}</p>
 
 
-                  {this.state[`distance${workerAndCompanyIndex}`] !== undefined ?
+                  {this.state[`distance${workerAndCompanyIndex}`] !== undefined && this.state[`distance${workerAndCompanyIndex}`] !== 'noValidPostcode' ?
 
                     <p style={{fontFamily: globalFonts.Abel, 
                       fontSize: "13px", margin: "-10px", marginTop: "10px", 
@@ -184,13 +213,26 @@ class WorkforceTabParent extends Component {
 
                     :
 
-                    <div></div>
 
-/*                    <p style={{fontFamily: globalFonts.Abel, 
-                      fontSize: "13px", margin: "-10px", marginTop: "10px", 
-                      padding: "0", color: "#DEDEDE"}}>
-                      Distance: Calculating...
-                    </p>    ...?        */ 
+                    <div>
+                      {this.state[`distance${workerAndCompanyIndex}`] == 'noValidPostcode' ?
+
+                        <p style={{fontFamily: globalFonts.Abel, 
+                          fontSize: "13px", margin: "-10px", marginTop: "10px", 
+                          padding: "0", color: "#DEDEDE"}}>
+                          Unable to calculate distance
+                        </p> 
+
+                        :
+
+                        <p style={{fontFamily: globalFonts.Abel, 
+                          fontSize: "13px", margin: "-10px", marginTop: "10px", 
+                          padding: "0", color: "#DEDEDE"}}>
+                          Distance: Calculating...
+                        </p> 
+
+                      }
+                    </div>
 
                   }
 

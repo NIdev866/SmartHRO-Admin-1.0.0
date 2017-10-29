@@ -61,63 +61,9 @@ class AdminParent extends Component {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*    setTimeout(function () { 
+    setTimeout(function () {         //enable this so the page refreshes so if new applicanta apply admin can see
       window.location.reload();
     }, 60000);
-*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -130,22 +76,6 @@ class AdminParent extends Component {
   updateWindowDimensions() {
     this.setState({ width: window.innerWidth, height: window.innerHeight });
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   workforceClick(){
     if(this.state.slider == "closed"){
@@ -321,14 +251,14 @@ class AdminParent extends Component {
     else{      
       adButtonStyle = {
         position: 'absolute',
-        bottom: '70px', 
+        top: this.state.height - 121, 
         right: '20px',
         zIndex: '2',
         backgroundColor: 'green'
       }
       adTextStyle = {
         position: 'absolute',
-        bottom: '81px', 
+        top: this.state.height - 91, 
         right: '34px',
         zIndex: '2',
         pointerEvents: "none", 

@@ -47,6 +47,15 @@ const validate = values => {
   }else if(/([A-Za-z@£$%^&*()#;\\])/g.test(values.salary)){
     errors.salary = 'Invalid Input'
   }
+
+  if (!values.new_question){
+    errors.new_question = "Required"
+  }else if(values.new_question.length > 30) {
+    errors.new_question = 'Question too long'
+  }
+
+
+
   return errors
 }
 
